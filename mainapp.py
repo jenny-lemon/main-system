@@ -1,27 +1,19 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import json
-import os
+import json, os
 
-# ── 頁面設定 ──────────────────────────────────────────────
-st.set_page_config(
-    page_title="內部系統總覽",
-    page_icon="🧭",
-    layout="wide",
-)
+st.set_page_config(page_title="內部系統總覽", page_icon="🧭", layout="wide")
 
-# ── 讀取 / 儲存系統清單 ────────────────────────────────────
 SYSTEMS_FILE = "systems.json"
-
 DEFAULT_SYSTEMS = [
-    {"name": "新系統",  "icon": "✦", "url": "https://new-system.streamlit.app"},
+    {"name": "新系統",   "icon": "✦", "url": "https://new-system.streamlit.app"},
     {"name": "訂單系統", "icon": "◈", "url": "https://orders-system.streamlit.app"},
     {"name": "備忘系統", "icon": "◉", "url": "https://memo-system.streamlit.app"},
 ]
 
 def load_systems():
     if os.path.exists(SYSTEMS_FILE):
-        with open(SYSTEMS_FILE, encoding="utf-8") as f:
+        with open(SYSTEMS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return DEFAULT_SYSTEMS
 
@@ -32,193 +24,168 @@ def save_systems(systems):
 if "systems" not in st.session_state:
     st.session_state.systems = load_systems()
 
-# ── 美化 CSS ──────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
-/* 隱藏 Streamlit 預設 UI */
-#MainMenu, header, footer { visibility: hidden; }
-[data-testid="stToolbar"] { display: none; }
-.block-container {
-    padding-top: 1.5rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-    max-width: 100% !important;
-}
+#MainMenu, footer { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent; }
+.block-container { padding: 1.8rem 2.5rem 0 2.5rem !important; max-width: 100% !important; }
 
-/* 整體背景與字體 */
-[data-testid="stAppViewContainer"] {
-    background: #0e1118;
+/* 整體背景：深藍灰，不要純黑 */
+[data-testid="stAppViewContainer"] { background: #1b1f2e; }
+html, body, [class*="css"] {
     font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
+    color: #dde1ee;
 }
 
-/* 頁面頂部標題 */
-.dashboard-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-.dashboard-logo {
+/* Header */
+.dash-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.dash-logo {
     width: 36px; height: 36px;
     background: linear-gradient(135deg, #6c8fff 0%, #a78bfa 100%);
-    border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(108,143,255,0.3);
 }
-.dashboard-title {
-    font-size: 18px; font-weight: 600;
-    color: #e2e5f0; letter-spacing: 0.02em;
-}
-.dashboard-badge {
-    margin-left: auto;
-    font-size: 11px; font-weight: 400;
-    color: #3d4358;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
+.dash-title { font-size: 18px; font-weight: 600; color: #eef0f8; letter-spacing: 0.02em; }
+.dash-sub { font-size: 11px; color: #4e5470; letter-spacing: 0.1em; margin-left: auto; text-transform: uppercase; }
 
-/* Tab 樣式 */
-[data-testid="stTabs"] [role="tablist"] {
-    gap: 0px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    background: transparent;
+/* Tabs */
+[data-testid="stTabs"] > div:first-child {
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    gap: 0 !important;
 }
-[data-testid="stTabs"] [role="tab"] {
+button[data-baseweb="tab"] {
     font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
-    font-size: 13.5px !important;
-    font-weight: 400 !important;
-    color: #5a6278 !important;
-    padding: 10px 20px !important;
-    border: none !important;
-    border-bottom: 2px solid transparent !important;
-    background: transparent !important;
-    border-radius: 0 !important;
-    transition: all 0.2s ease !important;
+    font-size: 13.5px !important; font-weight: 400 !important;
+    color: #6b7290 !important; padding: 10px 22px !important;
+    background: transparent !important; border: none !important;
+    border-bottom: 2px solid transparent !important; transition: all 0.2s !important;
 }
-[data-testid="stTabs"] [role="tab"]:hover {
-    color: #9aa3be !important;
-    background: rgba(255,255,255,0.03) !important;
+button[data-baseweb="tab"]:hover { color: #b0b8d4 !important; background: rgba(255,255,255,0.04) !important; }
+button[aria-selected="true"][data-baseweb="tab"] {
+    color: #8ba4ff !important; font-weight: 500 !important;
+    border-bottom: 2px solid #8ba4ff !important; background: transparent !important;
 }
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #8ba4ff !important;
-    border-bottom: 2px solid #8ba4ff !important;
-    font-weight: 500 !important;
-    background: transparent !important;
-}
-[data-testid="stTabs"] [data-testid="stTabPanel"] {
-    padding: 0 !important;
-}
+[data-testid="stTabPanel"] { padding: 0 !important; }
+[data-testid="stTabs"] [data-baseweb="tab-highlight"],
+[data-testid="stTabs"] [data-baseweb="tab-border"] { display: none !important; }
 
-/* Input 欄位 */
+/* Expander */
+[data-testid="stExpander"] {
+    background: #222638 !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: 10px !important; margin-bottom: 18px;
+}
+[data-testid="stExpander"] summary {
+    color: #8892b0 !important; font-size: 13px !important;
+}
+[data-testid="stExpander"] summary:hover { color: #b0b8d4 !important; }
+
+/* Input 欄位 - 關鍵修正 */
 [data-testid="stTextInput"] input {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 8px !important;
-    color: #d0d4e0 !important;
+    background: #2a2f45 !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 7px !important;
+    color: #eef0f8 !important;          /* 白色文字 */
+    font-size: 13.5px !important;
     font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
+    caret-color: #8ba4ff !important;
+}
+[data-testid="stTextInput"] input::placeholder {
+    color: #4a5070 !important;          /* placeholder 明顯一點 */
 }
 [data-testid="stTextInput"] input:focus {
-    border-color: #8ba4ff !important;
-    box-shadow: 0 0 0 2px rgba(139, 164, 255, 0.15) !important;
+    border-color: #6c8fff !important;
+    box-shadow: 0 0 0 2px rgba(108,143,255,0.2) !important;
 }
+[data-testid="stTextInput"] label { color: #6b7290 !important; font-size: 11.5px !important; }
 
 /* 按鈕 */
 [data-testid="stButton"] button {
-    border-radius: 8px !important;
-    font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
+    background: #2a2f45 !important;
+    border: 1px solid rgba(255,255,255,0.11) !important;
+    color: #8ba4ff !important; border-radius: 7px !important;
     font-size: 13px !important;
-    transition: all 0.2s ease !important;
+    font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
+    transition: all 0.18s !important;
 }
+[data-testid="stButton"] button:hover {
+    background: #313759 !important; border-color: #6c8fff !important;
+    color: #adc0ff !important;
+}
+
+/* Success / warning */
+[data-testid="stAlert"] { border-radius: 8px !important; font-size: 13px !important; }
+
+hr { border-color: rgba(255,255,255,0.08) !important; margin: 12px 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 頁面頂部 Header ───────────────────────────────────────
+# Header
 st.markdown("""
-<div class="dashboard-header">
-    <div class="dashboard-logo">🧭</div>
-    <span class="dashboard-title">內部系統總覽</span>
-    <span class="dashboard-badge">Internal Dashboard</span>
+<div class="dash-header">
+    <div class="dash-logo">🧭</div>
+    <span class="dash-title">內部系統總覽</span>
+    <span class="dash-sub">Internal Dashboard</span>
 </div>
 """, unsafe_allow_html=True)
 
-# ── 組合 Tab 清單（系統 + 設定）────────────────────────────
-systems = st.session_state.systems
-tab_labels = [f"{s['icon']}  {s['name']}" for s in systems] + ["⚙️  設定"]
-tabs = st.tabs(tab_labels)
+# ── 系統管理 ──────────────────────────────────────────────
+with st.expander("⚙️  管理系統清單", expanded=False):
+    systems = st.session_state.systems
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-# ── 各系統 iframe ─────────────────────────────────────────
-for i, s in enumerate(systems):
-    with tabs[i]:
-        iframe_url = s["url"].rstrip("/") + "/?embed=true"
-        components.iframe(iframe_url, height=860, scrolling=True)
-
-# ── 設定頁面 ──────────────────────────────────────────────
-with tabs[-1]:
-    st.markdown("<div style='padding-top: 24px;'>", unsafe_allow_html=True)
-    st.markdown("### ⚙️ 系統清單管理")
-
-    # ── 顯示現有系統（可編輯 / 刪除）─────────────────────
-    st.markdown("**現有系統**")
-    delete_index = None
-
-    for i, s in enumerate(list(st.session_state.systems)):
-        col1, col2, col3, col4 = st.columns([1, 3, 5, 1])
+    for i, sys in enumerate(systems):
+        col1, col2, col3, col4 = st.columns([1, 3, 6, 1])
         with col1:
-            new_icon = st.text_input("圖示", value=s["icon"], key=f"icon_{i}", label_visibility="collapsed")
+            new_icon = st.text_input("圖示", value=sys["icon"], key=f"icon_{i}", label_visibility="collapsed")
         with col2:
-            new_name = st.text_input("名稱", value=s["name"], key=f"name_{i}", label_visibility="collapsed")
+            new_name = st.text_input("名稱", value=sys["name"], key=f"name_{i}", label_visibility="collapsed")
         with col3:
-            new_url = st.text_input("網址", value=s["url"], key=f"url_{i}", label_visibility="collapsed")
+            new_url  = st.text_input("網址", value=sys["url"],  key=f"url_{i}",  label_visibility="collapsed")
         with col4:
-            st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
-            if st.button("🗑", key=f"del_{i}", help="刪除此系統"):
-                delete_index = i
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+            if st.button("✕", key=f"del_{i}", help="刪除此系統"):
+                systems.pop(i)
+                save_systems(systems)
+                st.rerun()
+        systems[i] = {"name": new_name, "icon": new_icon, "url": new_url}
 
-        st.session_state.systems[i]["icon"] = new_icon
-        st.session_state.systems[i]["name"] = new_name
-        st.session_state.systems[i]["url"]  = new_url
+    st.markdown("<hr>", unsafe_allow_html=True)
 
-    if delete_index is not None:
-        st.session_state.systems.pop(delete_index)
-        save_systems(st.session_state.systems)
+    c1, c2, c3, c4 = st.columns([1, 3, 6, 1])
+    with c1:
+        add_icon = st.text_input("圖示", value="◆", key="add_icon", label_visibility="collapsed")
+    with c2:
+        add_name = st.text_input("名稱", placeholder="系統名稱", key="add_name", label_visibility="collapsed")
+    with c3:
+        add_url  = st.text_input("網址", placeholder="https://xxx.streamlit.app", key="add_url", label_visibility="collapsed")
+    with c4:
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        if st.button("＋", key="add_btn", help="新增系統"):
+            if add_name and add_url:
+                systems.append({"name": add_name, "icon": add_icon, "url": add_url})
+                save_systems(systems)
+                st.rerun()
+            else:
+                st.warning("請填入名稱和網址")
+
+    if st.button("💾  儲存修改", key="save_btn"):
+        save_systems(systems)
+        st.session_state.systems = systems
+        st.success("已儲存！")
         st.rerun()
 
-    st.divider()
+# ── Tabs + iframe ─────────────────────────────────────────
+systems = st.session_state.systems
 
-    # ── 新增系統 ─────────────────────────────────────────
-    st.markdown("**＋ 新增系統**")
-    col1, col2, col3, col4 = st.columns([1, 3, 5, 1])
-    with col1:
-        add_icon = st.text_input("圖示", value="◆", key="add_icon")
-    with col2:
-        add_name = st.text_input("系統名稱", key="add_name", placeholder="例：報表系統")
-    with col3:
-        add_url  = st.text_input("Streamlit 網址", key="add_url", placeholder="https://xxx.streamlit.app")
-    with col4:
-        st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
-        add_clicked = st.button("＋ 新增")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if add_clicked:
-        if add_name and add_url:
-            st.session_state.systems.append({
-                "icon": add_icon or "◆",
-                "name": add_name,
-                "url":  add_url,
-            })
-            save_systems(st.session_state.systems)
-            st.success(f"✅ 已新增「{add_name}」，請重新整理頁面")
-            st.rerun()
-        else:
-            st.warning("請填寫系統名稱與網址")
-
-    st.markdown("<div style='margin-top: 12px;'>", unsafe_allow_html=True)
-    if st.button("💾 儲存所有修改", type="primary"):
-        save_systems(st.session_state.systems)
-        st.success("✅ 已儲存，請重新整理頁面套用變更")
-    st.markdown("</div></div>", unsafe_allow_html=True)
+if not systems:
+    st.info("尚未設定任何系統，請展開上方「管理系統清單」新增。")
+else:
+    tab_labels = [f"{s['icon']}  {s['name']}" for s in systems]
+    tabs = st.tabs(tab_labels)
+    for tab, sys in zip(tabs, systems):
+        with tab:
+            iframe_url = sys["url"].rstrip("/") + "/?embed=true"
+            components.iframe(iframe_url, height=860, scrolling=True)
