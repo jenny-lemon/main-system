@@ -3,13 +3,13 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="內部系統總覽", page_icon="🧭", layout="wide")
 
-# ── 圖示選項 ──────────────────────────────────────────────
-ICON_OPTIONS = ["◆", "✦", "◈", "◉", "●", "★", "▶", "⬟", "⬡", "⬢",
-                "📋", "📦", "📝", "💰", "🔧", "📊", "🗂", "🔔", "🧭", "🏠"]
+ICON_OPTIONS = [
+    "◆", "✦", "◈", "◉", "●", "★", "▶", "⬟", "⬡", "⬢",
+    "📋", "📦", "📝", "💰", "🔧", "📊", "🗂", "🔔", "🧭", "🏠"
+]
 
-# ── 預設系統清單（永久保存靠這裡，不依賴檔案系統）─────────
 DEFAULT_SYSTEMS = [
-    {"name": "新系統",   "icon": "✦", "url": "https://new-system.streamlit.app"},
+    {"name": "新系統", "icon": "✦", "url": "https://new-system.streamlit.app"},
     {"name": "訂單系統", "icon": "◈", "url": "https://orders-system.streamlit.app"},
     {"name": "備忘系統", "icon": "◉", "url": "https://memo-system.streamlit.app"},
 ]
@@ -19,91 +19,171 @@ if "systems" not in st.session_state:
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 #MainMenu, footer { visibility: hidden; }
 header[data-testid="stHeader"] { background: transparent; }
-.block-container { padding: 1.8rem 2.5rem 0 2.5rem !important; max-width: 100% !important; }
-[data-testid="stAppViewContainer"] { background: #1b1f2e; }
-html, body, [class*="css"] { font-family: 'DM Sans', 'Noto Sans TC', sans-serif; }
 
-.dash-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.dash-logo {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, #6c8fff 0%, #a78bfa 100%);
-    border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    font-size: 17px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(108,143,255,0.3);
+.block-container {
+    padding: 1.8rem 2.5rem 0 2.5rem !important;
+    max-width: 100% !important;
 }
-.dash-title { font-size: 17px; font-weight: 600; color: #eef0f8; letter-spacing: 0.02em; }
-.dash-sub { font-size: 11px; color: #4e5470; letter-spacing: 0.1em; margin-left: auto; text-transform: uppercase; }
+
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #f6fbff 0%, #eef7f3 100%);
+}
+
+html, body, [class*="css"] {
+    font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
+    color: #18324a;
+}
+
+.dash-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.dash-logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    flex-shrink: 0;
+    box-shadow: 0 8px 22px rgba(80, 160, 180, 0.25);
+}
+
+.dash-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #16324f;
+    letter-spacing: 0.02em;
+}
+
+.dash-sub {
+    font-size: 12px;
+    color: #7b8da3;
+    letter-spacing: 0.14em;
+    margin-left: auto;
+    text-transform: uppercase;
+    font-weight: 700;
+}
 
 [data-testid="stTabs"] > div:first-child {
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important; gap: 0 !important;
+    border-bottom: 1px solid #dbe8f3 !important;
+    gap: 0 !important;
 }
+
 button[data-baseweb="tab"] {
     font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
-    font-size: 13.5px !important; font-weight: 400 !important;
-    color: #6b7290 !important; padding: 10px 20px !important;
-    background: transparent !important; border: none !important;
-    border-bottom: 2px solid transparent !important; transition: all 0.2s !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #6d7f91 !important;
+    padding: 12px 24px !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    transition: all 0.2s !important;
 }
-button[data-baseweb="tab"]:hover { color: #b0b8d4 !important; background: rgba(255,255,255,0.04) !important; }
+
+button[data-baseweb="tab"]:hover {
+    color: #2f80ed !important;
+    background: rgba(47, 128, 237, 0.06) !important;
+}
+
 button[aria-selected="true"][data-baseweb="tab"] {
-    color: #8ba4ff !important; font-weight: 500 !important;
-    border-bottom: 2px solid #8ba4ff !important; background: transparent !important;
+    color: #2f80ed !important;
+    border-bottom: 3px solid #2f80ed !important;
+    background: transparent !important;
 }
-[data-testid="stTabPanel"] { padding: 0 !important; }
+
+[data-testid="stTabPanel"] {
+    padding: 0 !important;
+}
+
 [data-testid="stTabs"] [data-baseweb="tab-highlight"],
-[data-testid="stTabs"] [data-baseweb="tab-border"] { display: none !important; }
+[data-testid="stTabs"] [data-baseweb="tab-border"] {
+    display: none !important;
+}
 
-/* Popover 按鈕 */
+/* 右上角設定按鈕 */
 [data-testid="stColumn"]:last-child [data-testid="stPopover"] button {
-    background: transparent !important; border: none !important;
-    color: #4e5470 !important; font-size: 17px !important;
-    padding: 8px 10px !important; margin-top: 4px;
-    transition: color 0.2s !important;
-}
-[data-testid="stColumn"]:last-child [data-testid="stPopover"] button:hover {
-    color: #8ba4ff !important;
-    background: rgba(139,164,255,0.08) !important;
-    border-radius: 7px !important;
-}
-[data-testid="stPopoverBody"] {
-    background: #222638 !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
+    background: #ffffff !important;
+    border: 1px solid #d7e5f0 !important;
+    color: #2f80ed !important;
+    font-size: 19px !important;
+    padding: 8px 11px !important;
+    margin-top: 2px;
     border-radius: 12px !important;
-    padding: 16px !important;
-    min-width: 600px !important;
+    box-shadow: 0 6px 18px rgba(80, 120, 160, 0.12) !important;
 }
 
-/* Input & select 在 popover 裡 */
-[data-testid="stPopoverBody"] [data-testid="stTextInput"] input {
-    background: #2a2f45 !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 6px !important;
-    color: #eef0f8 !important;
-    font-size: 13px !important;
+[data-testid="stColumn"]:last-child [data-testid="stPopover"] button:hover {
+    background: #eaf4ff !important;
+    border-color: #b8d8ff !important;
 }
+
+[data-testid="stPopoverBody"] {
+    background: #ffffff !important;
+    border: 1px solid #d7e5f0 !important;
+    border-radius: 18px !important;
+    padding: 18px !important;
+    min-width: 660px !important;
+    box-shadow: 0 18px 45px rgba(70, 100, 130, 0.18) !important;
+}
+
+[data-testid="stPopoverBody"] h5 {
+    color: #16324f !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+}
+
+[data-testid="stPopoverBody"] [data-testid="stTextInput"] input {
+    background: #f7fbff !important;
+    border: 1px solid #cfddea !important;
+    border-radius: 10px !important;
+    color: #18324a !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+}
+
 [data-testid="stPopoverBody"] [data-testid="stSelectbox"] > div > div {
-    background: #2a2f45 !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 6px !important;
-    color: #eef0f8 !important;
-    font-size: 15px !important;
+    background: #f7fbff !important;
+    border: 1px solid #cfddea !important;
+    border-radius: 10px !important;
+    color: #18324a !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
 }
 
 [data-testid="stButton"] button {
-    background: #2a2f45 !important; border: 1px solid rgba(255,255,255,0.11) !important;
-    color: #8ba4ff !important; border-radius: 7px !important; font-size: 13px !important;
-    font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important; transition: all 0.18s !important;
+    background: #eaf4ff !important;
+    border: 1px solid #b8d8ff !important;
+    color: #1f6fd1 !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
+    transition: all 0.18s !important;
 }
-[data-testid="stButton"] button:hover { background: #313759 !important; border-color: #6c8fff !important; }
 
-hr { border-color: rgba(255,255,255,0.08) !important; margin: 10px 0 !important; }
+[data-testid="stButton"] button:hover {
+    background: #d8ecff !important;
+    border-color: #5aa9ff !important;
+}
+
+hr {
+    border-color: #dbe8f3 !important;
+    margin: 12px 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ── Header ────────────────────────────────────────────────
 st.markdown("""
 <div class="dash-header">
     <div class="dash-logo">🧭</div>
@@ -132,22 +212,43 @@ with col_gear:
 
         for i, sys in enumerate(systems):
             c1, c2, c3, c4 = st.columns([1.2, 2.5, 5, 1])
+
             with c1:
                 icon_idx = ICON_OPTIONS.index(sys["icon"]) if sys["icon"] in ICON_OPTIONS else 0
-                new_icon = st.selectbox("圖示", ICON_OPTIONS, index=icon_idx,
-                                        key=f"icon_{i}", label_visibility="collapsed")
+                new_icon = st.selectbox(
+                    "圖示",
+                    ICON_OPTIONS,
+                    index=icon_idx,
+                    key=f"icon_{i}",
+                    label_visibility="collapsed"
+                )
+
             with c2:
-                new_name = st.text_input("名稱", value=sys["name"],
-                                         key=f"name_{i}", label_visibility="collapsed")
+                new_name = st.text_input(
+                    "名稱",
+                    value=sys["name"],
+                    key=f"name_{i}",
+                    label_visibility="collapsed"
+                )
+
             with c3:
-                new_url = st.text_input("網址", value=sys["url"],
-                                        key=f"url_{i}", label_visibility="collapsed")
+                new_url = st.text_input(
+                    "網址",
+                    value=sys["url"],
+                    key=f"url_{i}",
+                    label_visibility="collapsed"
+                )
+
             with c4:
                 st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
                 if st.button("✕", key=f"del_{i}", help="刪除"):
                     to_delete = i
 
-            temp_systems.append({"name": new_name, "icon": new_icon, "url": new_url})
+            temp_systems.append({
+                "name": new_name.strip(),
+                "icon": new_icon,
+                "url": new_url.strip()
+            })
 
         if to_delete is not None:
             temp_systems.pop(to_delete)
@@ -156,34 +257,65 @@ with col_gear:
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        # 新增列
         c1, c2, c3, c4 = st.columns([1.2, 2.5, 5, 1])
+
         with c1:
-            add_icon = st.selectbox("圖示", ICON_OPTIONS, index=0,
-                                    key="add_icon", label_visibility="collapsed")
+            add_icon = st.selectbox(
+                "新增圖示",
+                ICON_OPTIONS,
+                index=0,
+                key="add_icon",
+                label_visibility="collapsed"
+            )
+
         with c2:
-            add_name = st.text_input("", placeholder="系統名稱",
-                                     key="add_name", label_visibility="collapsed")
+            add_name = st.text_input(
+                "新增名稱",
+                placeholder="系統名稱",
+                key="add_name",
+                label_visibility="collapsed"
+            )
+
         with c3:
-            add_url = st.text_input("", placeholder="https://xxx.streamlit.app",
-                                    key="add_url", label_visibility="collapsed")
+            add_url = st.text_input(
+                "新增網址",
+                placeholder="https://xxx.streamlit.app",
+                key="add_url",
+                label_visibility="collapsed"
+            )
+
         with c4:
             st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
-            if st.button("＋", key="add_btn"):
-                if add_name and add_url:
-                    temp_systems.append({"name": add_name, "icon": add_icon, "url": add_url})
+            if st.button("＋", key="add_btn", help="新增"):
+                if add_name.strip() and add_url.strip():
+                    temp_systems.append({
+                        "name": add_name.strip(),
+                        "icon": add_icon,
+                        "url": add_url.strip()
+                    })
                     st.session_state.systems = temp_systems
+                    st.session_state.add_name = ""
+                    st.session_state.add_url = ""
                     st.rerun()
                 else:
                     st.warning("請填入名稱和網址")
 
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
         if st.button("💾  儲存修改", key="save_btn"):
+            if add_name.strip() and add_url.strip():
+                temp_systems.append({
+                    "name": add_name.strip(),
+                    "icon": add_icon,
+                    "url": add_url.strip()
+                })
+                st.session_state.add_name = ""
+                st.session_state.add_url = ""
+
             st.session_state.systems = temp_systems
             st.success("✅ 已儲存！")
             st.rerun()
 
-# ── iframe ────────────────────────────────────────────────
 if tab_labels:
     for tab, sys in zip(tabs, systems):
         with tab:
