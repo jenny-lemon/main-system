@@ -287,34 +287,30 @@ with col_gear:
         with c4:
             st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
             if st.button("＋", key="add_btn", help="新增"):
-                if add_name.strip() and add_url.strip():
-                    temp_systems.append({
-                        "name": add_name.strip(),
-                        "icon": add_icon,
-                        "url": add_url.strip()
-                    })
-                    st.session_state.systems = temp_systems
-                    st.session_state.add_name = ""
-                    st.session_state.add_url = ""
-                    st.rerun()
-                else:
-                    st.warning("請填入名稱和網址")
+               if add_name.strip() and add_url.strip():
+                   temp_systems.append({
+                       "name": add_name.strip(),
+                       "icon": add_icon,
+                       "url": add_url.strip()
+                   })
+                   st.session_state.systems = temp_systems
+                   st.rerun()
+               else:
+                   st.warning("請填入名稱和網址")
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
         if st.button("💾  儲存修改", key="save_btn"):
-            if add_name.strip() and add_url.strip():
-                temp_systems.append({
-                    "name": add_name.strip(),
-                    "icon": add_icon,
-                    "url": add_url.strip()
-                })
-                st.session_state.add_name = ""
-                st.session_state.add_url = ""
+           if add_name.strip() and add_url.strip():
+               temp_systems.append({
+                   "name": add_name.strip(),
+                   "icon": add_icon,
+                   "url": add_url.strip()
+               })
 
-            st.session_state.systems = temp_systems
-            st.success("✅ 已儲存！")
-            st.rerun()
+           st.session_state.systems = temp_systems
+           st.success("✅ 已儲存！")
+           st.rerun()
 
 if tab_labels:
     for tab, sys in zip(tabs, systems):
