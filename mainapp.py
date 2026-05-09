@@ -1,5 +1,17 @@
+# mainapp.py
+# -*- coding: utf-8 -*-
+
+import json
 import streamlit as st
 import streamlit.components.v1 as components
+
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+except Exception:
+    gspread = None
+    Credentials = None
+
 
 st.set_page_config(page_title="內部系統總覽", page_icon="🧭", layout="wide")
 
@@ -14,8 +26,94 @@ DEFAULT_SYSTEMS = [
     {"name": "備忘系統", "icon": "◉", "url": "https://memo-system.streamlit.app"},
 ]
 
-if "systems" not in st.session_state:
-    st.session_state.systems = [s.copy() for s in DEFAULT_SYSTEMS]
+
+def get_google_client():
+    if gspread is None or Credentials is None:
+        raise RuntimeError("尚未安裝 gspread / google-auth，請確認 requirements.txt")
+
+    raw = st.secrets.get("GOOGLE", {}).get("SERVICE_ACCOUNT_JSON", "")
+    if not raw:
+        raise RuntimeError("尚未設定 GOOGLE.SERVICE_ACCOUNT_JSON")
+
+    info = json.loads(raw) if isinstance(raw, str) else raw
+
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+
+    creds = Credentials.from_service_account_info(info, scopes=scopes)
+    return gspread.authorize(creds)
+
+
+def get_systems_worksheet():
+    sheet_id = st.secrets.get("GOOGLE", {}).get("SYSTEMS_SHEET_ID", "")
+    worksheet_name = st.secrets.get("GOOGLE", {}).get("SYSTEMS_WORKSHEET_NAME", "systems")
+
+    if not sheet_id:
+        raise RuntimeError("尚未設定 GOOGLE.SYSTEMS_SHEET_ID")
+
+    client = get_google_client()
+    sheet = client.open_by_key(sheet_id)
+
+    try:
+        ws = sheet.worksheet(worksheet_name)
+    except Exception:
+        ws = sheet.add_worksheet(title=worksheet_name, rows=100, cols=3)
+        ws.update("A1:C1", [["icon", "name", "url"]])
+
+    headers = ws.row_values(1)
+    if headers[:3] != ["icon", "name", "url"]:
+        ws.update("A1:C1", [["icon", "name", "url"]])
+
+    return ws
+
+
+def load_systems_from_sheet():
+    try:
+        ws = get_systems_worksheet()
+        records = ws.get_all_records()
+
+        systems = []
+        for row in records:
+            icon = str(row.get("icon", "")).strip()
+            name = str(row.get("name", "")).strip()
+            url = str(row.get("url", "")).strip()
+
+            if name and url:
+                systems.append({
+                    "icon": icon or "◆",
+                    "name": name,
+                    "url": url,
+                })
+
+        return systems if systems else [s.copy() for s in DEFAULT_SYSTEMS]
+
+    except Exception as e:
+        st.warning(f"目前無法讀取 Google Sheet 系統清單，暫用預設清單：{e}")
+        return [s.copy() for s in DEFAULT_SYSTEMS]
+
+
+def save_systems_to_sheet(systems):
+    ws = get_systems_worksheet()
+
+    rows = [["icon", "name", "url"]]
+    for s in systems:
+        name = str(s.get("name", "")).strip()
+        url = str(s.get("url", "")).strip()
+        icon = str(s.get("icon", "")).strip() or "◆"
+
+        if name and url:
+            rows.append([icon, name, url])
+
+    ws.clear()
+    ws.update("A1:C" + str(len(rows)), rows)
+
+
+if "systems_loaded" not in st.session_state:
+    st.session_state.systems = load_systems_from_sheet()
+    st.session_state.systems_loaded = True
+
 
 st.markdown("""
 <style>
@@ -54,7 +152,6 @@ html, body, [class*="css"] {
     align-items: center;
     justify-content: center;
     font-size: 21px;
-    flex-shrink: 0;
     box-shadow: 0 8px 22px rgba(80, 160, 180, 0.25);
 }
 
@@ -62,7 +159,6 @@ html, body, [class*="css"] {
     font-size: 22px;
     font-weight: 700;
     color: #16324f;
-    letter-spacing: 0.02em;
 }
 
 .dash-sub {
@@ -76,7 +172,6 @@ html, body, [class*="css"] {
 
 [data-testid="stTabs"] > div:first-child {
     border-bottom: 1px solid #dbe8f3 !important;
-    gap: 0 !important;
 }
 
 button[data-baseweb="tab"] {
@@ -86,9 +181,7 @@ button[data-baseweb="tab"] {
     color: #6d7f91 !important;
     padding: 12px 24px !important;
     background: transparent !important;
-    border: none !important;
     border-bottom: 3px solid transparent !important;
-    transition: all 0.2s !important;
 }
 
 button[data-baseweb="tab"]:hover {
@@ -99,7 +192,6 @@ button[data-baseweb="tab"]:hover {
 button[aria-selected="true"][data-baseweb="tab"] {
     color: #2f80ed !important;
     border-bottom: 3px solid #2f80ed !important;
-    background: transparent !important;
 }
 
 [data-testid="stTabPanel"] {
@@ -111,21 +203,14 @@ button[aria-selected="true"][data-baseweb="tab"] {
     display: none !important;
 }
 
-/* 右上角設定按鈕 */
 [data-testid="stColumn"]:last-child [data-testid="stPopover"] button {
     background: #ffffff !important;
     border: 1px solid #d7e5f0 !important;
     color: #2f80ed !important;
     font-size: 19px !important;
     padding: 8px 11px !important;
-    margin-top: 2px;
     border-radius: 12px !important;
     box-shadow: 0 6px 18px rgba(80, 120, 160, 0.12) !important;
-}
-
-[data-testid="stColumn"]:last-child [data-testid="stPopover"] button:hover {
-    background: #eaf4ff !important;
-    border-color: #b8d8ff !important;
 }
 
 [data-testid="stPopoverBody"] {
@@ -133,7 +218,7 @@ button[aria-selected="true"][data-baseweb="tab"] {
     border: 1px solid #d7e5f0 !important;
     border-radius: 18px !important;
     padding: 18px !important;
-    min-width: 660px !important;
+    min-width: 720px !important;
     box-shadow: 0 18px 45px rgba(70, 100, 130, 0.18) !important;
 }
 
@@ -143,15 +228,7 @@ button[aria-selected="true"][data-baseweb="tab"] {
     font-weight: 800 !important;
 }
 
-[data-testid="stPopoverBody"] [data-testid="stTextInput"] input {
-    background: #f7fbff !important;
-    border: 1px solid #cfddea !important;
-    border-radius: 10px !important;
-    color: #18324a !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
-}
-
+[data-testid="stPopoverBody"] [data-testid="stTextInput"] input,
 [data-testid="stPopoverBody"] [data-testid="stSelectbox"] > div > div {
     background: #f7fbff !important;
     border: 1px solid #cfddea !important;
@@ -168,8 +245,6 @@ button[aria-selected="true"][data-baseweb="tab"] {
     border-radius: 10px !important;
     font-size: 15px !important;
     font-weight: 800 !important;
-    font-family: 'DM Sans', 'Noto Sans TC', sans-serif !important;
-    transition: all 0.18s !important;
 }
 
 [data-testid="stButton"] button:hover {
@@ -181,8 +256,27 @@ hr {
     border-color: #dbe8f3 !important;
     margin: 12px 0 !important;
 }
+
+@media (max-width: 768px) {
+    .block-container {
+        padding: 1rem 1rem 0 1rem !important;
+    }
+
+    .dash-title {
+        font-size: 19px;
+    }
+
+    .dash-sub {
+        display: none;
+    }
+
+    [data-testid="stPopoverBody"] {
+        min-width: 94vw !important;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 st.markdown("""
 <div class="dash-header">
@@ -191,6 +285,7 @@ st.markdown("""
     <span class="dash-sub">Internal Dashboard</span>
 </div>
 """, unsafe_allow_html=True)
+
 
 systems = st.session_state.systems
 tab_labels = [f"{s['icon']}  {s['name']}" for s in systems] if systems else []
@@ -211,7 +306,7 @@ with col_gear:
         temp_systems = []
 
         for i, sys in enumerate(systems):
-            c1, c2, c3, c4 = st.columns([1.2, 2.5, 5, 1])
+            c1, c2, c3, c4 = st.columns([1.2, 2.6, 5, 1])
 
             with c1:
                 icon_idx = ICON_OPTIONS.index(sys["icon"]) if sys["icon"] in ICON_OPTIONS else 0
@@ -244,20 +339,23 @@ with col_gear:
                 if st.button("✕", key=f"del_{i}", help="刪除"):
                     to_delete = i
 
-            temp_systems.append({
-                "name": new_name.strip(),
-                "icon": new_icon,
-                "url": new_url.strip()
-            })
+            if new_name.strip() and new_url.strip():
+                temp_systems.append({
+                    "name": new_name.strip(),
+                    "icon": new_icon,
+                    "url": new_url.strip()
+                })
 
         if to_delete is not None:
             temp_systems.pop(to_delete)
             st.session_state.systems = temp_systems
+            save_systems_to_sheet(temp_systems)
+            st.success("✅ 已刪除並儲存")
             st.rerun()
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        c1, c2, c3, c4 = st.columns([1.2, 2.5, 5, 1])
+        c1, c2, c3, c4 = st.columns([1.2, 2.6, 5, 1])
 
         with c1:
             add_icon = st.selectbox(
@@ -287,30 +385,36 @@ with col_gear:
         with c4:
             st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
             if st.button("＋", key="add_btn", help="新增"):
-               if add_name.strip() and add_url.strip():
-                   temp_systems.append({
-                       "name": add_name.strip(),
-                       "icon": add_icon,
-                       "url": add_url.strip()
-                   })
-                   st.session_state.systems = temp_systems
-                   st.rerun()
-               else:
-                   st.warning("請填入名稱和網址")
+                if add_name.strip() and add_url.strip():
+                    temp_systems.append({
+                        "name": add_name.strip(),
+                        "icon": add_icon,
+                        "url": add_url.strip()
+                    })
+                    st.session_state.systems = temp_systems
+                    save_systems_to_sheet(temp_systems)
+                    st.success("✅ 已新增並儲存")
+                    st.rerun()
+                else:
+                    st.warning("請填入名稱和網址")
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
         if st.button("💾  儲存修改", key="save_btn"):
-           if add_name.strip() and add_url.strip():
-               temp_systems.append({
-                   "name": add_name.strip(),
-                   "icon": add_icon,
-                   "url": add_url.strip()
-               })
+            final_systems = temp_systems.copy()
 
-           st.session_state.systems = temp_systems
-           st.success("✅ 已儲存！")
-           st.rerun()
+            if add_name.strip() and add_url.strip():
+                final_systems.append({
+                    "name": add_name.strip(),
+                    "icon": add_icon,
+                    "url": add_url.strip()
+                })
+
+            st.session_state.systems = final_systems
+            save_systems_to_sheet(final_systems)
+            st.success("✅ 已永久儲存到 Google Sheet")
+            st.rerun()
+
 
 if tab_labels:
     for tab, sys in zip(tabs, systems):
