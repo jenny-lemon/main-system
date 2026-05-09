@@ -1,0 +1,17 @@
+[
+  {
+    "name": "新人系統",
+    "icon": "✦",
+    "url": "https://new-system.streamlit.app"
+  },
+  {
+    "name": "訂單系統",
+    "icon": "◈",
+    "url": "https://orders-system.streamlit.app"
+  },
+  {
+    "name": "備忘系統",
+    "icon": "◉",
+    "url": "https://memo-system.streamlit.app"
+  }
+]
