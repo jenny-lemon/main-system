@@ -2,18 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import json
+from pathlib import Path
+
 import streamlit as st
 import streamlit.components.v1 as components
 
-try:
-    import gspread
-    from google.oauth2.service_account import Credentials
-except Exception:
-    gspread = None
-    Credentials = None
-
 
 st.set_page_config(page_title="內部系統總覽", page_icon="🧭", layout="wide")
+
+SYSTEMS_FILE = Path("systems.json")
 
 ICON_OPTIONS = [
     "◆", "✦", "◈", "◉", "●", "★", "▶", "⬟", "⬡", "⬢",
@@ -27,92 +24,56 @@ DEFAULT_SYSTEMS = [
 ]
 
 
-def get_google_client():
-    if gspread is None or Credentials is None:
-        raise RuntimeError("尚未安裝 gspread / google-auth，請確認 requirements.txt")
-
-    raw = st.secrets.get("GOOGLE", {}).get("SERVICE_ACCOUNT_JSON", "")
-    if not raw:
-        raise RuntimeError("尚未設定 GOOGLE.SERVICE_ACCOUNT_JSON")
-
-    info = json.loads(raw) if isinstance(raw, str) else raw
-
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-
-    creds = Credentials.from_service_account_info(info, scopes=scopes)
-    return gspread.authorize(creds)
-
-
-def get_systems_worksheet():
-    sheet_id = st.secrets.get("GOOGLE", {}).get("SYSTEMS_SHEET_ID", "")
-    worksheet_name = st.secrets.get("GOOGLE", {}).get("SYSTEMS_WORKSHEET_NAME", "systems")
-
-    if not sheet_id:
-        raise RuntimeError("尚未設定 GOOGLE.SYSTEMS_SHEET_ID")
-
-    client = get_google_client()
-    sheet = client.open_by_key(sheet_id)
+def load_systems():
+    if not SYSTEMS_FILE.exists():
+        save_systems(DEFAULT_SYSTEMS)
+        return [s.copy() for s in DEFAULT_SYSTEMS]
 
     try:
-        ws = sheet.worksheet(worksheet_name)
-    except Exception:
-        ws = sheet.add_worksheet(title=worksheet_name, rows=100, cols=3)
-        ws.update("A1:C1", [["icon", "name", "url"]])
-
-    headers = ws.row_values(1)
-    if headers[:3] != ["icon", "name", "url"]:
-        ws.update("A1:C1", [["icon", "name", "url"]])
-
-    return ws
-
-
-def load_systems_from_sheet():
-    try:
-        ws = get_systems_worksheet()
-        records = ws.get_all_records()
-
+        data = json.loads(SYSTEMS_FILE.read_text(encoding="utf-8"))
         systems = []
-        for row in records:
-            icon = str(row.get("icon", "")).strip()
-            name = str(row.get("name", "")).strip()
-            url = str(row.get("url", "")).strip()
+
+        for item in data:
+            name = str(item.get("name", "")).strip()
+            icon = str(item.get("icon", "◆")).strip() or "◆"
+            url = str(item.get("url", "")).strip()
 
             if name and url:
                 systems.append({
-                    "icon": icon or "◆",
                     "name": name,
+                    "icon": icon,
                     "url": url,
                 })
 
         return systems if systems else [s.copy() for s in DEFAULT_SYSTEMS]
 
-    except Exception as e:
-        st.warning(f"目前無法讀取 Google Sheet 系統清單，暫用預設清單：{e}")
+    except Exception:
         return [s.copy() for s in DEFAULT_SYSTEMS]
 
 
-def save_systems_to_sheet(systems):
-    ws = get_systems_worksheet()
+def save_systems(systems):
+    clean = []
 
-    rows = [["icon", "name", "url"]]
     for s in systems:
         name = str(s.get("name", "")).strip()
+        icon = str(s.get("icon", "◆")).strip() or "◆"
         url = str(s.get("url", "")).strip()
-        icon = str(s.get("icon", "")).strip() or "◆"
 
         if name and url:
-            rows.append([icon, name, url])
+            clean.append({
+                "name": name,
+                "icon": icon,
+                "url": url,
+            })
 
-    ws.clear()
-    ws.update("A1:C" + str(len(rows)), rows)
+    SYSTEMS_FILE.write_text(
+        json.dumps(clean, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
 
 
-if "systems_loaded" not in st.session_state:
-    st.session_state.systems = load_systems_from_sheet()
-    st.session_state.systems_loaded = True
+if "systems" not in st.session_state:
+    st.session_state.systems = load_systems()
 
 
 st.markdown("""
@@ -349,7 +310,7 @@ with col_gear:
         if to_delete is not None:
             temp_systems.pop(to_delete)
             st.session_state.systems = temp_systems
-            save_systems_to_sheet(temp_systems)
+            save_systems(temp_systems)
             st.success("✅ 已刪除並儲存")
             st.rerun()
 
@@ -392,7 +353,7 @@ with col_gear:
                         "url": add_url.strip()
                     })
                     st.session_state.systems = temp_systems
-                    save_systems_to_sheet(temp_systems)
+                    save_systems(temp_systems)
                     st.success("✅ 已新增並儲存")
                     st.rerun()
                 else:
@@ -411,8 +372,8 @@ with col_gear:
                 })
 
             st.session_state.systems = final_systems
-            save_systems_to_sheet(final_systems)
-            st.success("✅ 已永久儲存到 Google Sheet")
+            save_systems(final_systems)
+            st.success("✅ 已儲存")
             st.rerun()
 
 
